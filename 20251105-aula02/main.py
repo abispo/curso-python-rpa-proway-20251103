@@ -2,7 +2,10 @@
 Script que faz o download de arquivos de um servidor FTP, salva os dados em um banco de dados, cria um arquivo zip a partir dos arquivos que foram baixados e envia esse arquivo por e-mail.
 """
 
+import csv
 import os
+import sqlite3
+from sqlite3 import Connection
 
 from ftplib import FTP
 
@@ -11,10 +14,33 @@ from dotenv import load_dotenv
 # Essa função carrega o conteúdo do arquivo .env e o transforma em variáveis de ambiente que ficarão disponíveis durante a execução do script
 load_dotenv()
 
-# Baixar os arquivos do FTP
 # Ler os arquivos e salvar os dados no banco de dados
 # Criar um arquivo zip a partir dos arquivos baixados
 # Enviar o arquivo zip por e-mail
+
+def create_database(connection: Connection):
+
+    cursor = connection.cursor()
+
+    sql = """
+    CREATE TABLE sensores(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        codigo TEXT UNIQUE NOT NULL
+    );"""
+    cursor.execute(sql)
+
+    sql = """
+    CREATE TABLE leituras(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id_sensor INTEGER NOT NULL,
+        tipo TEXT NOT NULL,
+        data_hora TEXT NOT NULL,
+        valor REAL NOT NULL,
+        unidade TEXT NULL,
+        FOREIGN KEY(id_sensor) REFERENCES sensores(id));"""
+    cursor.execute(sql)
+
+    print("Banco de dados criado com sucesso.")
 
 def create_downloads_dir():
 
@@ -28,6 +54,7 @@ def create_downloads_dir():
         # O método os.mkdir cria o diretório. Caso o diretório já exista, essa linha lançará uma exceção
         os.mkdir(downloads_dir)
 
+# Baixar os arquivos do FTP
 def download_ftp_files():
 
     itens = []
@@ -53,9 +80,30 @@ def download_ftp_files():
                 ftp.retrbinary(f"RETR {filename}", ftp_file.write)
                 print(f"Arquivo '{filename}' salvo com sucesso.")
 
+def save_data(connection: Connection, filename: str):
+    pass
+
+
 if __name__ == "__main__":
+
+    # Criamos o objeto de conexão ao banco de dados SQLite
+    connection_string = os.path.join(os.getcwd(), "db.sqlite3")
+
     create_downloads_dir()
     download_ftp_files()
 
-    def nao_carrega():
-        return True
+    # Se o arquivo do banco de dados existe, iremos apagá-lo
+    if os.path.exists(connection_string):
+        os.remove(connection_string)
+        print(f"Arquivo '{connection_string}' removido.")
+
+    sqlite_connection = sqlite3.connect(connection_string)
+    create_database(connection=sqlite_connection)
+
+    downloads_dir = os.path.join(os.getcwd(), "downloads")
+
+    # A função listdir lista o conteúdo do diretório passado como parâmetro
+    files = os.listdir(downloads_dir)
+
+    for file in files:
+        print(file)
