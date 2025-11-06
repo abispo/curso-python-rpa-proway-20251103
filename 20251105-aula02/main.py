@@ -80,8 +80,48 @@ def download_ftp_files():
                 ftp.retrbinary(f"RETR {filename}", ftp_file.write)
                 print(f"Arquivo '{filename}' salvo com sucesso.")
 
-def save_data(connection: Connection, filename: str):
-    pass
+def save_data(connection: Connection, filename: str, csv_file: csv.DictReader):
+    
+    # Aqui a gente retira a extensão do nome do arquivo
+    filename = filename.replace(".csv", "")
+
+    # O método split separa a string transformando em uma lista, utilizando um separador
+    filename_parts = filename.split("_")
+
+    sensor_name = filename_parts[0]
+    sensor_type = filename_parts[1]
+    sensor_read_date = filename_parts[2]
+
+    cursor = connection.cursor()
+
+    # O método fetchone do cursor retorna um registro do resultado. Caso não haja registros na consulta, o método retorna None
+    result = cursor.execute("SELECT * FROM sensores WHERE codigo = ?", (sensor_name,)).fetchone()
+    
+    if result:
+        sensor_id = result[0]
+
+    else:
+        cursor.execute("INSERT INTO sensores(codigo) VALUES (?)", (sensor_name,))
+        connection.commit()
+        sensor_id = cursor.lastrowid
+
+    for line in csv_file:
+        sql = """
+        INSERT INTO
+            leituras(id_sensor, tipo, data_hora, valor, unidade)
+        VALUES
+            (?, ?, ?, ?, ?)"""
+        
+        year = sensor_read_date[:4]
+        month = sensor_read_date[4:6]
+        day = sensor_read_date[6:]
+        hour = line["timestamp"]
+        
+        timestamp = f"{year}-{month}-{day} {hour}"
+        
+        cursor.execute(sql, (sensor_id, sensor_type, timestamp, line["valor"], line["unidade"],))
+    
+    connection.commit()
 
 
 if __name__ == "__main__":
@@ -103,7 +143,17 @@ if __name__ == "__main__":
     downloads_dir = os.path.join(os.getcwd(), "downloads")
 
     # A função listdir lista o conteúdo do diretório passado como parâmetro
-    files = os.listdir(downloads_dir)
+    filenames = os.listdir(downloads_dir)
 
-    for file in files:
-        print(file)
+    for filename in filenames:
+        
+        file_path = os.path.join(downloads_dir, filename)
+
+        with open(file_path, "r", encoding="utf-8") as _file:
+            csv_file = csv.DictReader(_file, delimiter=';')
+
+            save_data(
+                connection=sqlite_connection,
+                filename=filename,
+                csv_file=csv_file
+            )
