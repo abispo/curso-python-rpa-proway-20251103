@@ -3,19 +3,20 @@ Script que faz o download de arquivos de um servidor FTP, salva os dados em um b
 """
 
 import csv
+import datetime
 import os
 import sqlite3
-from sqlite3 import Connection
+import zipfile
 
 from ftplib import FTP
+from sqlite3 import Connection
+from typing import List
 
 from dotenv import load_dotenv
 
 # Essa função carrega o conteúdo do arquivo .env e o transforma em variáveis de ambiente que ficarão disponíveis durante a execução do script
 load_dotenv()
 
-# Ler os arquivos e salvar os dados no banco de dados
-# Criar um arquivo zip a partir dos arquivos baixados
 # Enviar o arquivo zip por e-mail
 
 def create_database(connection: Connection):
@@ -80,6 +81,7 @@ def download_ftp_files():
                 ftp.retrbinary(f"RETR {filename}", ftp_file.write)
                 print(f"Arquivo '{filename}' salvo com sucesso.")
 
+# Ler os arquivos e salvar os dados no banco de dados
 def save_data(connection: Connection, filename: str, csv_file: csv.DictReader):
     
     # Aqui a gente retira a extensão do nome do arquivo
@@ -123,6 +125,23 @@ def save_data(connection: Connection, filename: str, csv_file: csv.DictReader):
     
     connection.commit()
 
+# Criar um arquivo zip a partir dos arquivos baixados
+def create_zipfile(filenames: List[str]):
+    
+    today = datetime.date.today().strftime(
+        "%Y%m%d"
+    )
+
+    zipfile_name = f"dados_sensores_{today}.zip"
+
+    with zipfile.ZipFile(zipfile_name, "w", zipfile.ZIP_DEFLATED) as zipf:
+        for filename in filenames:
+            file_path = os.path.join(os.getcwd(), "downloads", filename)
+
+            zipf.write(file_path, arcname=filename)
+
+    print("Arquivo zip salvo com sucesso.")
+    
 
 if __name__ == "__main__":
 
@@ -157,3 +176,5 @@ if __name__ == "__main__":
                 filename=filename,
                 csv_file=csv_file
             )
+
+    create_zipfile(filenames)
