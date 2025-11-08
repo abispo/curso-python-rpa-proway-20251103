@@ -5,8 +5,14 @@ Script que faz o download de arquivos de um servidor FTP, salva os dados em um b
 import csv
 import datetime
 import os
+import smtplib
 import sqlite3
 import zipfile
+
+from email import encoders
+from email.mime.base import MIMEBase
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 from ftplib import FTP
 from sqlite3 import Connection
@@ -16,8 +22,6 @@ from dotenv import load_dotenv
 
 # Essa função carrega o conteúdo do arquivo .env e o transforma em variáveis de ambiente que ficarão disponíveis durante a execução do script
 load_dotenv()
-
-# Enviar o arquivo zip por e-mail
 
 def create_database(connection: Connection):
 
@@ -141,7 +145,60 @@ def create_zipfile(filenames: List[str]):
             zipf.write(file_path, arcname=filename)
 
     print("Arquivo zip salvo com sucesso.")
+
+# Enviar o arquivo zip por e-mail
+def send_email():
+
+    configs = {
+        "from": "admin@localhost",
+        "to": "user@localhost",
+        "subject": "Relatório de leitura de sensores (Bispo)"
+    }
+
+    message = MIMEMultipart()
+    message["from"] = configs["from"]
+    message["to"] = configs["to"]
+    message["subject"] = configs["subject"]
+
+    email_body = f"""
+Olá! Segue em anexo o arquivo zip contendo os arquivos .csv de dados dos sensores.
+Data de Processamento: {datetime.date.today().strftime("%d/%m/%Y")}.
+
+Sistema de monitoramento de sensores."""
     
+    message.attach(MIMEText(email_body, "plain"))
+
+    today = datetime.date.today().strftime(
+        "%Y%m%d"
+    )
+    zipfile_name = f"dados_sensores_{today}.zip"
+
+    with open(zipfile_name, "rb") as zipf:
+        part = MIMEBase("application", "octet-stream")
+        
+        part.set_payload(zipf.read())
+        encoders.encode_base64(part)
+
+        part.add_header(
+            'Content-Disposition',
+            f'attachment; filename="{zipfile_name}"'
+        )
+
+        message.attach(part)
+
+        smtp_host = os.getenv("SMTP_HOST")
+        smtp_port = os.getenv("SMTP_PORT")
+        smtp_user = os.getenv("SMTP_USER")
+        smtp_pass = os.getenv("SMTP_PASS")
+
+        with smtplib.SMTP(smtp_host, smtp_port) as smtp_server:
+            smtp_server.starttls()
+
+            smtp_server.login(smtp_user, smtp_pass)
+            smtp_server.send_message(message)
+
+            print("Email enviado com sucesso.")
+
 
 if __name__ == "__main__":
 
@@ -178,3 +235,4 @@ if __name__ == "__main__":
             )
 
     create_zipfile(filenames)
+    send_email()
