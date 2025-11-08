@@ -6,6 +6,7 @@ Por exemplo: Quando você ler o nome do arquivo (01-10-2025), o script deverá:
 * Criar a pasta 2025, caso ela não exista
 * Dentro da pasta do ano, criar a pasta 10 (que é o mês) caso não exista
 * Copiar o arquivo para essa pasta.
+* Pesquisem pela função makedirs (https://www.w3schools.com/python/ref_os_makedirs.asp)
 
 Vocês vão precisar instalar a biblioteca `requests` (`pip install requests`).
 
