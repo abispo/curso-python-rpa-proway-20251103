@@ -50,3 +50,5 @@ if __name__ == "__main__":
         ]
 
         arquivo_csv.writerows(clientes)
+
+    # pip install requests beautifulsoup4
