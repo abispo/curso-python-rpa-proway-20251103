@@ -1,0 +1,5 @@
+https://weathershopper.pythonanywhere.com/
+https://shop.polymer-project.org/
+https://demoqa.com/
+https://bugbug.io/blog/testing-frameworks/best-selenium-practice-websites/
+https://www.saucedemo.com/
