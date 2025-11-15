@@ -3,3 +3,4 @@ https://shop.polymer-project.org/
 https://demoqa.com/
 https://bugbug.io/blog/testing-frameworks/best-selenium-practice-websites/
 https://www.saucedemo.com/
+https://www.w3schools.com/xml/xpath_intro.asp
