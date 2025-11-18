@@ -10,6 +10,8 @@ Você deve mostrar no terminal os itens que você colocou no carrinho, os valore
 
 from time import sleep
 
+from fake_useragent import UserAgent
+
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.chrome.options import Options as ChromeOptions
@@ -24,9 +26,14 @@ prefs = {
     "profile.password_manager_enabled": False
 }
 
+ua = UserAgent()
+
 options = ChromeOptions()
 options.page_load_strategy = "eager"
+options.add_argument("--headless")
+options.add_argument("--window-size=1920,1080")
 options.add_argument("--start-maximized")
+options.add_argument(f"--user-agent={ua.firefox}")
 options.add_experimental_option("prefs", prefs)
 
 if __name__ == "__main__":
@@ -39,6 +46,7 @@ if __name__ == "__main__":
         options=options
     )
 
+    print("Acessando o site...")
     driver.get(url=url)
 
     login_box = WebDriverWait(driver, 10).until(
@@ -67,6 +75,18 @@ if __name__ == "__main__":
         EC.presence_of_element_located((By.ID, "add-to-cart-sauce-labs-bike-light"))
     )
     bike_light_button.click()
+    sleep(1.5)
+
+    tshirt_button = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.ID, "add-to-cart-sauce-labs-bolt-t-shirt"))
+    )
+    tshirt_button.click()
+    sleep(1.5)
+
+    fleece_jacket_button = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.ID, "add-to-cart-sauce-labs-fleece-jacket"))
+    )
+    fleece_jacket_button.click()
     sleep(1.5)
 
     shopping_cart_button = driver.find_element(By.ID, "shopping_cart_container")
@@ -102,22 +122,28 @@ if __name__ == "__main__":
 
     print(header)
     print(header_line, end='\n\n')
+
+    quantities_list = driver.find_elements(By.XPATH, "//div[@class='cart_quantity']")
+    names_list = driver.find_elements(By.XPATH, "//div[@class='inventory_item_name']")
+    prices_list = driver.find_elements(By.XPATH, "//div[@class='inventory_item_price']")
     
     # Corrigir para uma lista para cada valor
-    for cart_item in cart_items:
-        cart_quantityl = cart_item.find_elements(By.XPATH, "//div[@class='cart_item_label']")
-        cart_quantity = cart_item.find_element(By.XPATH, "//div[@class='cart_quantity']").text
-        item_name = cart_item.find_element(
-            By.XPATH,
-            "//div[@class='cart_item_label']//div[@class='inventory_item_name']"
-        ).text
-        item_price = cart_item.find_element(
-            By.XPATH,
-            "//div[@class='cart_item_label']//div[@class='item_pricebar']//div[@class='inventory_item_price']"
-        ).text.split()[-1]
-        # Apesar de ser funcional, podemos passar direto a última classe onde a informação que queremos está. Ou seja, o comando xpath acima poderia ser //div[@class='inventory_item_price']
+    for index in range(len(cart_items)):
+        quantity = quantities_list[index].text
+        name = names_list[index].text
+        price = prices_list[index].text
         
-        line = f"{cart_quantity.ljust(5)}{item_name.ljust(30)}{item_price.ljust(10)}"
+        line = f"{quantity.ljust(5)}{name.ljust(30)}{price.ljust(10)}"
         print(line)
 
+    summary_values = driver.find_elements(By.CLASS_NAME, "summary_value_label")
+    summary_total = driver.find_element(By.CLASS_NAME, "summary_total_label")
+    summary_tax = driver.find_element(By.CLASS_NAME, "summary_tax_label")
+
+    print(f"\n\nInformação de Entrega: {summary_values[1].text}")
+    print(f"Informação de Pagamento: {summary_values[0].text}")
+    print(f"Taxa: {summary_tax.text.split()[-1]}")
+    print(f"Preço total: {summary_total.text.split()[-1]}\n")
+
+    driver.save_screenshot("photo.png")
     driver.quit()
