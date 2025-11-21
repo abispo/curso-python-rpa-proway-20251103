@@ -6,6 +6,8 @@ O **PyAutoGUI** é um módulo Python de código aberto que permite a automação
 
 * **Vantagem**: Permite que seu script interaja com qualquer aplicativo ou sistema operacional (Windows, macOS, Linux) ao controlar a tela visualmente, sem depender de APIs específicas de aplicativos.
 
+Acesse [a documentação oficial](https://pyautogui.readthedocs.io/en/latest/) do PyAutoGui.
+
 # Telegram Bot
 
 Um **Telegram Bot** é uma conta de usuário automatizada que pode interagir com usuários, grupos e canais dentro do aplicativo de mensagens Telegram.
