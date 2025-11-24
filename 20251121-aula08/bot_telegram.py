@@ -1,6 +1,7 @@
 import datetime
 import logging
 import os
+import uvicorn
 
 from dotenv import load_dotenv
 
@@ -52,6 +53,9 @@ async def lifespan(app: FastAPI):
         await bot_app.initialize()
         await bot_app.start()
 
+        logger.info("Registrando o webhook no telegram...")
+        await bot_app.bot.set_webhook(WEBHOOK_URL)
+
     yield
 
     if ENV.lower() == "production":
@@ -59,8 +63,23 @@ async def lifespan(app: FastAPI):
         await bot_app.stop()
         await bot_app.shutdown()
 
-            
+api_app = FastAPI(lifespan=lifespan)
 
 if __name__ == "__main__":
-    logger.info("Iniciando bot em modo POLLING...")
-    bot_app.run_polling()
+
+    if ENV.lower() == "production":
+
+        @api_app.post("/webhook")
+        async def webhook(request: Request):
+            data = await request.json()
+            update = Update.de_json(data, bot_app.bot)
+
+            await bot_app.process_update(update)
+
+            return {"status": "OK"}
+        
+        uvicorn.run(api_app, host="0.0.0.0", port=8000)
+
+    else:
+        logger.info("Iniciando bot em modo POLLING...")
+        bot_app.run_polling()
