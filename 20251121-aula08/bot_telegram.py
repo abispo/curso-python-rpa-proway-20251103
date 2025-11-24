@@ -28,7 +28,7 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_name = update.message.from_user.first_name
 
     timestamp = datetime.datetime.now(datetime.UTC).strftime(
-        "%d/%m/%Y %H:%M:%S"
+        "%H:%M:%S de %d/%m/%Y"
     )
 
     await update.message.reply_text(f"Olá {user_name}. Você digitou '{user_text}'. Agora são {timestamp}.")
