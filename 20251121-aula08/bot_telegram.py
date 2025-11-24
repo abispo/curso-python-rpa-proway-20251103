@@ -23,9 +23,13 @@ logger = logging.getLogger(__name__)
 
 load_dotenv()
 
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+ENV = os.getenv("ENVIRONMENT")
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")
+
 class AutomacaoProwayBot(Bot):
     def __init__(self):
-        return super().__init__(os.getenv("TELEGRAM_TOKEN"))
+        return super().__init__(TELEGRAM_TOKEN)
 
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_text = update.message.text
@@ -39,6 +43,23 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 bot_app = ApplicationBuilder().bot(AutomacaoProwayBot()).build()
 bot_app.add_handler(MessageHandler(filters.TEXT, echo))
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    
+    if ENV.lower() == "production":
+        logger.info("Iniciando bot em modo WEBHOOK...")
+        await bot_app.initialize()
+        await bot_app.start()
+
+    yield
+
+    if ENV.lower() == "production":
+        logger.info("Encerrando a aplicação...")
+        await bot_app.stop()
+        await bot_app.shutdown()
+
+            
 
 if __name__ == "__main__":
     logger.info("Iniciando bot em modo POLLING...")
